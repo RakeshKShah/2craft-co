@@ -8,16 +8,12 @@ import sellerRoutes from "./routes/seller";
 import orderRoutes from "./routes/orders";
 import reviewRoutes from "./routes/reviews";
 import adminRoutes from "./routes/admin";
-import webhookRoutes from "./routes/webhook";
 import { runWeeklyPayouts } from "./services/payouts";
 
 const app = express();
 const PORT = process.env.PORT ?? 4000;
 
 app.use(cors({ origin: process.env.FRONTEND_URL ?? "http://localhost:5173" }));
-
-// Stripe webhook needs raw body — mount before json parser
-app.use("/webhook", webhookRoutes);
 
 app.use(express.json());
 

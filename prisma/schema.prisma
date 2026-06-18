@@ -57,7 +57,6 @@ model SellerProfile {
   user            User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   storeName       String @map("store_name")
   bio             String @default("")
-  payoutAccountId String? @map("payout_account_id")
 
   products Product[]
   payouts  Payout[]
@@ -92,7 +91,6 @@ model Order {
   status                OrderStatus @default(PENDING)
   totalCents            Int         @default(0) @map("total_cents")
   platformFeeCents      Int         @default(0) @map("platform_fee_cents")
-  stripePaymentIntentId String?     @map("stripe_payment_intent_id")
   createdAt             DateTime    @default(now()) @map("created_at")
 
   items OrderItem[]
@@ -138,7 +136,6 @@ model Payout {
   sellerId         String       @map("seller_id")
   seller           SellerProfile @relation(fields: [sellerId], references: [id])
   amountCents      Int          @map("amount_cents")
-  stripeTransferId String?      @map("stripe_transfer_id")
   periodStart      DateTime     @map("period_start")
   periodEnd        DateTime     @map("period_end")
   status           PayoutStatus @default(PENDING)

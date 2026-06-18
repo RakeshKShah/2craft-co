@@ -20,11 +20,7 @@ export function CartPage() {
         items: items.map((i) => ({ product_id: i.product_id, qty: i.qty })),
       });
       clear();
-      if (data.demo_mode) {
-        navigate(`/orders?success=${data.order_id}`);
-      } else {
-        alert("Stripe payment would open here with client_secret: " + data.client_secret);
-      }
+      navigate(`/orders?success=${data.order_id}`);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       setError(msg ?? "Checkout failed");
@@ -71,7 +67,7 @@ export function CartPage() {
             disabled={loading}
             className="mt-6 w-full rounded-full bg-teal-800 py-4 font-medium text-white hover:bg-teal-900 disabled:opacity-50"
           >
-            {loading ? "Processing..." : "Checkout with Stripe"}
+            {loading ? "Processing..." : "Place Order"}
           </button>
         </>
       )}

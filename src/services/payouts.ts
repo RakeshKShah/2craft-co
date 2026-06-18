@@ -1,5 +1,4 @@
 import { prisma, calcFees } from "../utils/prisma";
-import { isStripeConfigured, stripe } from "./stripe";
 
 export async function runWeeklyPayouts() {
   const now = new Date();
@@ -32,17 +31,6 @@ export async function runWeeklyPayouts() {
   for (const [sellerId, items] of bySeller) {
     const amountCents = items.reduce((s, i) => s + i.sellerPayoutCents, 0);
     const seller = items[0].product.seller;
-    let stripeTransferId: string | undefined;
-
-    if (isStripeConfigured() && seller.payoutAccountId && amountCents > 0) {
-      const transfer = await stripe.transfers.create({
-        amount: amountCents,
-        currency: "usd",
-        destination: seller.payoutAccountId,
-        description: `Craft & Co weekly payout ${periodStart.toISOString().slice(0, 10)}`,
-      });
-      stripeTransferId = transfer.id;
-    }
 
     const payout = await prisma.payout.create({
       data: {
@@ -50,8 +38,7 @@ export async function runWeeklyPayouts() {
         amountCents,
         periodStart,
         periodEnd,
-        status: stripeTransferId ? "PAID" : "PENDING",
-        stripeTransferId,
+        status: "PENDING",
         orderItems: { connect: items.map((i) => ({ id: i.id })) },
       },
     });
@@ -62,7 +49,7 @@ export async function runWeeklyPayouts() {
   return {
     processed: results.length,
     totalAmountCents: results.reduce((s, p) => s + p.amountCents, 0),
-    demoMode: !isStripeConfigured(),
+    demoMode: true,
   };
 }
 

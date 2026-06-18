@@ -2,7 +2,6 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma, calcFees } from "../utils/prisma";
 import { requireAuth, requireRole } from "../middleware/auth";
-import { isStripeConfigured, stripe } from "../services/stripe";
 import { notifySellerOrderPaid } from "../services/email";
 import { syncProductStockStatus } from "../services/payouts";
 
@@ -70,50 +69,31 @@ router.post("/checkout", requireAuth, requireRole("BUYER"), async (req, res) => 
       },
     });
 
-    if (!isStripeConfigured()) {
-      await prisma.$transaction(async (tx) => {
-        await tx.order.update({ where: { id: order.id }, data: { status: "PAID" } });
-        for (const item of lineItems) {
-          await tx.product.update({
-            where: { id: item.product.id },
-            data: { stockQty: { decrement: item.qty } },
-          });
-          await syncProductStockStatus(item.product.id);
-        }
-      });
-
-      for (const item of order.items) {
-        await notifySellerOrderPaid(
-          item.product.seller.user.email,
-          item.product.seller.storeName,
-          item.product.title,
-          item.qty,
-        );
+    await prisma.$transaction(async (tx) => {
+      await tx.order.update({ where: { id: order.id }, data: { status: "PAID" } });
+      for (const item of lineItems) {
+        await tx.product.update({
+          where: { id: item.product.id },
+          data: { stockQty: { decrement: item.qty } },
+        });
+        await syncProductStockStatus(item.product.id);
       }
+    });
 
-      return res.json({
-        order_id: order.id,
-        demo_mode: true,
-        client_secret: null,
-        message: "Order placed (demo mode — add Stripe keys for real payments)",
-      });
+    for (const item of order.items) {
+      await notifySellerOrderPaid(
+        item.product.seller.user.email,
+        item.product.seller.storeName,
+        item.product.title,
+        item.qty,
+      );
     }
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: totalCents,
-      currency: "usd",
-      metadata: { orderId: order.id },
-      automatic_payment_methods: { enabled: true },
-    });
-
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { stripePaymentIntentId: paymentIntent.id },
-    });
-
-    res.json({
+    return res.json({
       order_id: order.id,
-      client_secret: paymentIntent.client_secret,
+      demo_mode: true,
+      client_secret: null,
+      message: "Order placed",
     });
   } catch (err) {
     if (err instanceof z.ZodError) {

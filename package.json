@@ -24,7 +24,6 @@
     "node-cron": "^4.2.1",
     "pg": "^8.21.0",
     "resend": "^6.12.4",
-    "stripe": "^22.2.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
