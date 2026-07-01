@@ -9,9 +9,9 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const IMG = {
-  jewelry: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600",
-  ceramics: "https://images.unsplash.com/photo-1514228742587-6b1558fcca1d?w=600",
-  textiles: "https://images.unsplash.com/photo-1520903920243-00d872a2bd1c?w=600",
+  jewelry: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80",
+  ceramics: "https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=600&q=80",
+  textiles: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=600&q=80",
 };
 
 const seedProducts = [

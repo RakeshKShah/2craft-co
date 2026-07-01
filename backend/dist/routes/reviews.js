@@ -1,0 +1,50 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const zod_1 = require("zod");
+const prisma_1 = require("../utils/prisma");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+const reviewSchema = zod_1.z.object({
+    order_item_id: zod_1.z.string(),
+    rating: zod_1.z.number().int().min(1).max(5),
+    body: zod_1.z.string().min(1).max(1000),
+});
+router.post("/", auth_1.requireAuth, (0, auth_1.requireRole)("BUYER"), async (req, res) => {
+    try {
+        const data = reviewSchema.parse(req.body);
+        const orderItem = await prisma_1.prisma.orderItem.findUnique({
+            where: { id: data.order_item_id },
+            include: { order: true, review: true },
+        });
+        if (!orderItem || orderItem.order.buyerId !== req.user.id) {
+            return res.status(404).json({ error: "Order item not found" });
+        }
+        // BR-08: validate order status = delivered
+        if (orderItem.order.status !== "DELIVERED") {
+            return res.status(400).json({
+                error: "Reviews are only allowed after the order has been delivered",
+            });
+        }
+        if (orderItem.review) {
+            return res.status(400).json({ error: "Already reviewed" });
+        }
+        const review = await prisma_1.prisma.review.create({
+            data: {
+                orderItemId: data.order_item_id,
+                productId: orderItem.productId,
+                buyerId: req.user.id,
+                rating: data.rating,
+                body: data.body,
+            },
+        });
+        res.status(201).json(review);
+    }
+    catch (err) {
+        if (err instanceof zod_1.z.ZodError) {
+            return res.status(400).json({ error: err.issues[0]?.message });
+        }
+        res.status(500).json({ error: "Failed to submit review" });
+    }
+});
+exports.default = router;
